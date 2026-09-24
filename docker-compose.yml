@@ -1,0 +1,69 @@
+name: engineering-intelligence
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eip}
+      POSTGRES_USER: ${POSTGRES_USER:-eip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-only}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  migrate:
+    build: ./backend
+    command: [".venv/bin/alembic", "upgrade", "head"]
+    environment:
+      EIP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-eip}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-eip}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  backend:
+    build: ./backend
+    environment:
+      EIP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-eip}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-eip}
+      EIP_REDIS_URL: redis://redis:6379/0
+      EIP_ENVIRONMENT: ${EIP_ENVIRONMENT:-local}
+      EIP_ALLOWED_ORIGINS: '${EIP_ALLOWED_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}'
+      EIP_SESSION_TTL_SECONDS: ${EIP_SESSION_TTL_SECONDS:-43200}
+      EIP_AUTH_IP_LIMIT: ${EIP_AUTH_IP_LIMIT:-30}
+      EIP_AUTH_ACCOUNT_LIMIT: ${EIP_AUTH_ACCOUNT_LIMIT:-10}
+      EIP_AUTH_WINDOW_SECONDS: ${EIP_AUTH_WINDOW_SECONDS:-300}
+      EIP_PASSWORD_HASH_CONCURRENCY: ${EIP_PASSWORD_HASH_CONCURRENCY:-2}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", ".venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  frontend:
+    build: ./frontend
+    environment:
+      EIP_API_URL: http://backend:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    # The foundation UI uses explicitly labeled fixtures, so it can run independently.
+volumes:
+  postgres_data:
