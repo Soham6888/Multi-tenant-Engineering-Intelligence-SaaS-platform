@@ -35,4 +35,16 @@ The same-origin Next.js proxy exposes only the documented auth and organization 
 
 Upcoming contract families: repositories and repository metrics; analytics/overview, deployments, pull-requests, ci; integrations/github; webhooks/github; ai/chat; alerts and audit-log listing. Audit writes are present; no audit read route exists yet. Invitation delivery is out of band; this API does not claim to send email or verify email ownership. See FRS for behavior. No stub route implies these exist.
 
-Collection contract will use `data` plus `pagination: {has_more, next_cursor}`. Cursor validation, limits, ordering and tenant scope belong to each implementation. No unauthenticated business endpoint should be introduced ahead of auth and tenancy.
+Collection contract uses `data` plus `pagination: {has_more, next_cursor}`. Cursor validation, limits, ordering and tenant scope belong to each implementation. No unauthenticated business endpoint should be introduced ahead of auth and tenancy.
+
+## Collection contract and abuse controls
+
+`GET /api/v1/organizations` and `GET /api/v1/organizations/{id}/members` now accept `limit` (default 25, maximum 100) and `cursor`. Both return:
+
+```json
+{"data": [], "pagination": {"has_more": false, "next_cursor": null}}
+```
+
+Ordering is stable by UUID, not name or join time. Cursors are scoped to the caller and collection, and membership is still authorized separately on every request. Cursors are traversal positions, never authorization credentials. The Next.js organization proxy forwards these pagination parameters.
+
+All organization requests have a configurable per-user Redis budget (`EIP_API_USER_LIMIT`, default 120; `EIP_API_WINDOW_SECONDS`, default 60). Redis failure denies these requests with 503. Rate-limit errors include Retry-After. Current account/organization POST and PATCH bodies are bounded at 16 KiB before parsing, and API responses carry Cache-Control: no-store, including errors and invitation tokens.

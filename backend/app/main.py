@@ -68,7 +68,12 @@ def create_app() -> FastAPI:
     async def auth_error(request: Request, exc: AuthError) -> Response:
         response = error_response(request, exc.status, exc.code, exc.message)
         if exc.status == 429:
-            response.headers["Retry-After"] = str(request.app.state.settings.auth_window_seconds)
+            settings = request.app.state.settings
+            response.headers["Retry-After"] = str(
+                settings.auth_window_seconds
+                if request.url.path.startswith("/api/v1/auth/")
+                else settings.api_window_seconds
+            )
         return response
 
     @app.exception_handler(OrganizationError)
@@ -112,7 +117,7 @@ def create_app() -> FastAPI:
             response = error_response(request, 500, "INTERNAL_ERROR", "An internal error occurred")
         response.headers["X-Request-ID"] = request.state.request_id
         response.headers["X-Content-Type-Options"] = "nosniff"
-        if request.url.path.startswith("/api/v1/auth/"):
+        if request.url.path.startswith("/api/v1/"):
             response.headers["Cache-Control"] = "no-store"
         logger.info(
             json.dumps(

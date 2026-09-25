@@ -87,3 +87,24 @@ test("export produces a sample CSV", async ({ page }) => {
     "Sample-data report exported",
   );
 });
+
+test("review focus drills into the selected sample repository", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const focus = page.getByRole("region", {
+    name: "Keep good work moving forward.",
+  });
+  await expect(focus).toContainText("Sample data. GitHub is not connected.");
+  await page
+    .getByLabel("Repository", { exact: true })
+    .selectOption("payments-api");
+  await expect(page.locator(".focus-row")).toHaveCount(1);
+  await page.locator(".focus-row").click();
+  await expect(
+    page.getByRole("heading", { name: "Pull Requests", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("PR state")).toHaveValue("Awaiting review");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.locator("tbody")).toContainText("Add idempotency keys");
+});

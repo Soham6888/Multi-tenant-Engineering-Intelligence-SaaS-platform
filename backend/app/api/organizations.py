@@ -1,10 +1,11 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import browser_mutation, current_user, database
+from app.core.rate_limit import check_api_limit
 from app.models import Organization, User
 from app.schemas.organizations import (
     InvitationAccept,
@@ -18,21 +19,33 @@ from app.schemas.organizations import (
     Role,
     RoleUpdate,
 )
+from app.schemas.pagination import Page, decode_cursor, paginate
 from app.services.organizations import OrganizationService
 
-router = APIRouter(prefix="/api/v1/organizations", tags=["organizations"])
+
+async def api_limit(request: Request, actor: Annotated[User, Depends(current_user)]) -> None:
+    await check_api_limit(request.app.state.redis, request.app.state.settings, str(actor.id))
+
+
+router = APIRouter(
+    prefix="/api/v1/organizations", tags=["organizations"], dependencies=[Depends(api_limit)]
+)
 
 
 def service_for(db: Annotated[AsyncSession, Depends(database)]) -> OrganizationService:
     return OrganizationService(db)
 
 
-@router.get("", response_model=list[OrganizationSummary])
+@router.get("", response_model=Page[OrganizationSummary])
 async def list_organizations(
     actor: Annotated[User, Depends(current_user)],
     service: Annotated[OrganizationService, Depends(service_for)],
-) -> list[OrganizationSummary]:
-    return [
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
+) -> Page[OrganizationSummary]:
+    scope = f"organizations:{actor.id}"
+    rows = await service.repository.memberships(actor.id, limit, decode_cursor(cursor, scope))
+    data = [
         OrganizationSummary(
             id=org.id,
             name=org.name,
@@ -40,8 +53,9 @@ async def list_organizations(
             created_at=org.created_at,
             role=Role(member.role),
         )
-        for org, member in await service.repository.memberships(actor.id)
+        for org, member in rows
     ]
+    return paginate(data, limit, scope, [org.id for org, _ in rows])
 
 
 @router.post(
@@ -75,13 +89,18 @@ async def get_organization(
     )
 
 
-@router.get("/{organization_id}/members", response_model=list[MemberOutput])
+@router.get("/{organization_id}/members", response_model=Page[MemberOutput])
 async def get_members(
     organization_id: UUID,
     actor: Annotated[User, Depends(current_user)],
     service: Annotated[OrganizationService, Depends(service_for)],
-) -> list[MemberOutput]:
-    return [
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
+) -> Page[MemberOutput]:
+    await service.require_member(organization_id, actor)
+    scope = f"members:{organization_id}:{actor.id}"
+    rows = await service.list_members(organization_id, actor, limit, decode_cursor(cursor, scope))
+    data = [
         MemberOutput(
             id=member.id,
             user_id=user.id,
@@ -90,8 +109,9 @@ async def get_members(
             role=Role(member.role),
             joined_at=member.created_at,
         )
-        for member, user in await service.list_members(organization_id, actor)
+        for member, user in rows
     ]
+    return paginate(data, limit, scope, [member.id for member, _ in rows])
 
 
 @router.patch(

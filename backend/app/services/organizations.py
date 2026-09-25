@@ -33,7 +33,13 @@ class OrganizationService:
                 user_id=actor.id,
                 organization_id=organization_id,
                 action=action,
-                resource_type="ORGANIZATION",
+                resource_type=(
+                    "ORGANIZATION_MEMBER"
+                    if action in ("ROLE_CHANGED", "USER_REMOVED")
+                    else "ORGANIZATION_INVITATION"
+                    if action.startswith("INVITATION_")
+                    else "ORGANIZATION"
+                ),
                 resource_id=resource_id,
                 request_id=request_id,
             )
@@ -73,6 +79,13 @@ class OrganizationService:
             raise OrganizationError(404, "ORGANIZATION_NOT_FOUND", "Organization not found")
         return member
 
+    async def lock_organization(self, organization_id: UUID) -> None:
+        # Acquire before reading permissions or targets. All membership mutations
+        # use this same lock, so a waiting request rechecks current permissions.
+        await self.db.scalar(
+            select(Organization.id).where(Organization.id == organization_id).with_for_update()
+        )
+
     async def get(
         self, organization_id: UUID, actor: User
     ) -> tuple[Organization, OrganizationMember]:
@@ -83,14 +96,15 @@ class OrganizationService:
         return organization, member
 
     async def list_members(
-        self, organization_id: UUID, actor: User
+        self, organization_id: UUID, actor: User, limit: int = 25, after: UUID | None = None
     ) -> list[tuple[OrganizationMember, User]]:
         await self.require_member(organization_id, actor)
-        return await self.repository.members(organization_id)
+        return await self.repository.members(organization_id, limit, after)
 
     async def update_role(
         self, organization_id: UUID, user_id: UUID, role: Role, actor: User, request_id: str
     ) -> OrganizationMember:
+        await self.lock_organization(organization_id)
         manager = await self.require_member(organization_id, actor)
         target = await self.repository.member(organization_id, user_id)
         if target is None:
@@ -125,6 +139,7 @@ class OrganizationService:
     async def remove_member(
         self, organization_id: UUID, user_id: UUID, actor: User, request_id: str
     ) -> None:
+        await self.lock_organization(organization_id)
         manager = await self.require_member(organization_id, actor)
         target = await self.repository.member(organization_id, user_id)
         if target is None:
@@ -156,6 +171,7 @@ class OrganizationService:
     async def invite(
         self, organization_id: UUID, data: InvitationCreate, actor: User, request_id: str
     ) -> tuple[OrganizationInvitation, str]:
+        await self.lock_organization(organization_id)
         manager = await self.require_member(organization_id, actor)
         if manager.role not in (Role.OWNER.value, Role.ADMIN.value):
             raise OrganizationError(403, "FORBIDDEN", "You cannot invite organization members")
@@ -204,7 +220,18 @@ class OrganizationService:
     ) -> tuple[Organization, OrganizationMember]:
         digest = hashlib.sha256(data.token.encode()).hexdigest()
         invitation = await self.repository.invitation(digest)
+        if invitation is not None:
+            await self.lock_organization(invitation.organization_id)
+            # An invite may have been replaced, accepted or expired while waiting.
+            invitation = await self.repository.invitation(digest)
         if invitation is None or invitation.email != actor.email.casefold():
+            raise OrganizationError(404, "INVITATION_NOT_FOUND", "Invitation not found or expired")
+        issuer = await self.repository.member(invitation.organization_id, invitation.invited_by)
+        if (
+            issuer is None
+            or issuer.role not in (Role.OWNER.value, Role.ADMIN.value)
+            or (invitation.role == Role.ADMIN.value and issuer.role != Role.OWNER.value)
+        ):
             raise OrganizationError(404, "INVITATION_NOT_FOUND", "Invitation not found or expired")
         try:
             async with self.db.begin_nested():

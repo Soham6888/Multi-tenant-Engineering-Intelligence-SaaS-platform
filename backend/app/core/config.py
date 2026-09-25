@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     auth_ip_limit: int = Field(default=30, ge=1)
     auth_account_limit: int = Field(default=10, ge=1)
     auth_window_seconds: int = Field(default=300, ge=1)
+    api_user_limit: int = Field(default=120, ge=1)
+    api_window_seconds: int = Field(default=60, ge=1)
     password_hash_concurrency: int = Field(default=2, ge=1, le=8)
 
     @property

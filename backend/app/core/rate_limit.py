@@ -12,6 +12,18 @@ return n
 """
 
 
+async def check_api_limit(redis: Redis, settings: Settings, user_id: str) -> None:
+    try:
+        key = f"api:user:{token_digest(user_id)}"
+        count = await redis.eval(INCREMENT, 1, key, str(settings.api_window_seconds))  # type: ignore[misc]
+        if int(count) > settings.api_user_limit:
+            raise AuthError(429, "RATE_LIMITED", "Too many requests. Please try again later.")
+    except RedisError as exc:
+        raise AuthError(
+            503, "DEPENDENCY_UNAVAILABLE", "Service is temporarily unavailable"
+        ) from exc
+
+
 async def check_auth_limit(redis: Redis, settings: Settings, ip: str, email: str | None) -> None:
     buckets = [(f"auth:ip:{token_digest(ip)}", settings.auth_ip_limit)]
     if email:

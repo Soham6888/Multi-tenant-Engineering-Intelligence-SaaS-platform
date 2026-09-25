@@ -1,0 +1,344 @@
+/* Workspace visual layer. Keep shared authentication controls independent. */
+.app-shell .sidebar {
+  border-right: 1px solid #263247;
+}
+.app-shell .workspace-picker {
+  background: #1b283d;
+  border-color: #35435a;
+  border-radius: 12px;
+}
+.app-shell .workspace-avatar {
+  background: #37445f;
+  color: #e6eaff;
+}
+.app-shell .nav-item {
+  border-radius: 9px;
+  font-size: 13px;
+}
+.app-shell .nav-label {
+  color: #94a3bb;
+  letter-spacing: 1.5px;
+}
+.app-shell .nav-divider,
+.app-shell .profile {
+  border-color: #344158;
+}
+.app-shell .nav-divider {
+  background: #344158;
+}
+.app-shell .topbar {
+  background: #ffffffd9;
+  backdrop-filter: blur(16px);
+  border-bottom-color: var(--line);
+}
+.app-shell .heading-eyebrow {
+  font-size: 10px;
+  color: #61718b;
+  letter-spacing: 2px;
+}
+.app-shell h1 {
+  font-size: clamp(27px, 2.6vw, 38px);
+  letter-spacing: -1.5px;
+}
+.app-shell .page-heading p {
+  font-size: 14px;
+  color: #63718a;
+}
+.app-shell .button {
+  border-radius: 9px;
+  border-color: #dbe2ec;
+}
+.app-shell .button.primary {
+  background: #20324b;
+  border-color: #20324b;
+  box-shadow: 0 3px 8px #162c4717;
+}
+.app-shell .demo-notice {
+  background: #edf2f8;
+  border: 1px solid #dce4ee;
+  border-radius: 9px;
+  color: #54667f;
+  font-size: 11px;
+}
+.app-shell .demo-notice strong,
+.app-shell .demo-notice button {
+  color: #334d70;
+}
+.app-shell .panel {
+  border-radius: 14px;
+  box-shadow: 0 3px 12px #223d5c04;
+}
+.app-shell .panel-heading h2 {
+  font-size: 14px;
+}
+.app-shell .metric-card {
+  box-shadow: 0 4px 15px #253c5b05;
+}
+.app-shell .metric-label {
+  color: #52627b;
+}
+.app-shell .metric-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1.6px;
+}
+.app-shell .metric-note {
+  color: #617087;
+}
+.app-shell .metric-note.positive {
+  color: #217362;
+}
+.app-shell .period-control {
+  background: #e9edf4;
+  border-color: #dee5ef;
+}
+.app-shell .period-control button {
+  color: #586982;
+  min-height: 32px;
+}
+.app-shell .period-control button.selected {
+  color: #1b354e;
+}
+.app-shell .select-control {
+  border-color: #dbe2ec;
+  border-radius: 8px;
+}
+.app-shell .snapshot {
+  color: #64748b;
+}
+.app-shell .table-scroll th {
+  background: #f8fafd;
+  color: #607089;
+}
+.app-shell .table-scroll tbody tr:hover {
+  background: #f6f9fc;
+}
+.delivery-focus {
+  display: grid;
+  grid-template-columns: 0.95fr 1.25fr;
+  margin: 0 0 28px;
+  border: 1px solid #263a50;
+  border-radius: 19px;
+  overflow: hidden;
+  background: #142638;
+  color: #fff;
+  box-shadow: 0 12px 32px #14263812;
+}
+.focus-intro {
+  padding: 29px 30px;
+  background: radial-gradient(ellipse at 5% 100%, #245a5966, transparent 70%);
+}
+.focus-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a7e7d4;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 1.6px;
+}
+.focus-intro h2 {
+  font-size: clamp(25px, 2.5vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+  margin: 15px 0 12px;
+  font-weight: 650;
+}
+.focus-intro > p {
+  color: #b4c5d6;
+  font-size: 12px;
+  line-height: 1.8;
+  max-width: 300px;
+}
+.focus-action {
+  margin-top: 21px;
+  min-height: 40px;
+  padding: 10px 14px;
+  background: #b6f1dd;
+  color: #183a3c;
+  border: 1px solid #c5f6e7;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+  font-weight: 650;
+  font-size: 12px;
+}
+.focus-footnote {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin-top: 20px;
+  font-size: 10px;
+  color: #a1b9ca;
+}
+.focus-queue {
+  margin: 22px;
+  margin-left: 0;
+  border: 1px solid #3b4b5f;
+  border-radius: 12px;
+  background: #ffffff06;
+  padding: 20px;
+  align-self: center;
+}
+.focus-queue-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+.focus-queue-heading > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.focus-count {
+  background: #415368;
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: #e0eef7;
+  font-size: 11px;
+}
+.queue-caption {
+  font-size: 10px;
+  color: #b3c3d3;
+  line-height: 1.7;
+  margin: 8px 0 14px;
+}
+.focus-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 0;
+  border-top: 1px solid #3b4b5f;
+  color: #edf5fb;
+}
+.focus-row:hover {
+  background: #ffffff08;
+}
+.focus-pr-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  background: #314953;
+  color: #ace7d2;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+.focus-row-copy {
+  min-width: 0;
+  flex: 1;
+}
+.focus-row-copy strong {
+  display: block;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.focus-row-copy small {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  font-size: 10px;
+  color: #b4c5d6;
+}
+.queue-age {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: #f6d3a1;
+}
+.queue-footer {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  border-top: 1px solid #3b4b5f;
+  padding-top: 13px;
+  font-size: 10px;
+  color: #b3c3d3;
+}
+.queue-empty {
+  padding: 24px 0;
+  color: #c6d6e5;
+}
+@media (max-width: 1100px) {
+  .delivery-focus {
+    grid-template-columns: 1fr;
+  }
+  .focus-intro {
+    padding: 24px;
+  }
+  .focus-intro h2 br {
+    display: none;
+  }
+  .focus-intro > p {
+    max-width: 460px;
+  }
+  .focus-footnote {
+    display: none;
+  }
+  .focus-queue {
+    margin: 0 24px 24px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell .page-heading p {
+    font-size: 12px;
+  }
+  .app-shell .heading-eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .app-shell .demo-notice {
+    font-size: 10px;
+  }
+  .delivery-focus {
+    border-radius: 14px;
+    margin-bottom: 22px;
+  }
+  .focus-intro {
+    padding: 22px;
+  }
+  .focus-intro h2 {
+    font-size: 29px;
+    max-width: 260px;
+  }
+  .focus-queue {
+    margin: 0 14px 14px;
+    padding: 14px;
+  }
+  .focus-row {
+    gap: 9px;
+  }
+  .queue-age {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .app-shell .filterbar {
+    flex-wrap: wrap;
+  }
+  .app-shell .filter-right {
+    margin-left: auto;
+  }
+  .app-shell .metric-label {
+    font-size: 11px;
+  }
+  .app-shell .metric-note {
+    font-size: 10px;
+    line-height: 1.5;
+    align-items: flex-start;
+  }
+  .app-shell .metric-note svg {
+    margin-top: 2px;
+  }
+  .app-shell .metric-value > .sparkline {
+    display: none;
+  }
+  .app-shell .panel-heading h2 {
+    font-size: 13px;
+  }
+}

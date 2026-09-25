@@ -1,10 +1,10 @@
 # Engineering Intelligence Platform
 
-Read README.md, docs/requirements/FRS.md, and docs/STATUS.md before changing code.
+Read README.md, docs/requirements/FRS.md, docs/STATUS.md, and docs/DEVELOPMENT_PLAN.md before changing code.
 The user's master project specification is the source of truth. Never silently change it.
 
 - Local-first modular monolith with independent workers; maximum total cloud budget ₹500.
-- Implement one validated phase at a time. Foundation is current; authentication is next.
+- Implement one validated phase at a time. Foundation, authentication and initial tenancy exist. Follow the development plan; reproduce recorded checks and proceed to GitHub integration design.
 - Backend: Python/FastAPI/Pydantic/SQLAlchemy/Alembic/PostgreSQL. Frontend: Next.js/TypeScript.
 - Redis needs an actual caching/rate-limiting responsibility when business endpoints arrive.
 - Queue, storage, and LLM integrations use adapters when introduced; no speculative frameworks.

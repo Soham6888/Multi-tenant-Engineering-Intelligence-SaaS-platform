@@ -3,6 +3,11 @@ export type Identity = {
   csrf_token: string;
 };
 
+export type Page<T> = {
+  data: T[];
+  pagination: { has_more: boolean; next_cursor: string | null };
+};
+
 export type Organization = {
   id: string;
   name: string;
@@ -50,10 +55,15 @@ export async function authRequest(
 
 export async function organizationsRequest<T>(
   path = "",
-  options?: { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: object },
+  options?: {
+    method?: "GET" | "POST" | "PATCH" | "DELETE";
+    body?: object;
+    signal?: AbortSignal;
+  },
 ): Promise<T> {
   const response = await fetch(`/api/v1/organizations${path}`, {
     method: options?.method || "GET",
+    signal: options?.signal,
     credentials: "same-origin",
     cache: "no-store",
     headers: { "Content-Type": "application/json", "X-EIP-Request": "1" },
@@ -61,6 +71,7 @@ export async function organizationsRequest<T>(
       ? JSON.stringify(options?.body || {})
       : undefined,
   });
+  if (response.status === 204) return undefined as T;
   const data = await response.json();
   if (!response.ok)
     throw new ApiError(

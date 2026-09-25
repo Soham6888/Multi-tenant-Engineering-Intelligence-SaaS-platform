@@ -21,6 +21,7 @@ import {
   organizationsRequest,
   type Identity,
   type Organization,
+  type Page,
 } from "@/lib/auth";
 import "@/app/auth.css";
 
@@ -28,6 +29,8 @@ export default function AccountPage() {
   const router = useRouter();
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [pageBusy, setPageBusy] = useState(false);
   const [name, setName] = useState("");
   const [inviteToken, setInviteToken] = useState("");
   const [acceptMessage, setAcceptMessage] = useState("");
@@ -43,8 +46,13 @@ export default function AccountPage() {
     setError("");
     authRequest("me", { signal: controller.signal })
       .then(async (session) => {
+        const page = await organizationsRequest<Page<Organization>>("", {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
         setIdentity(session);
-        setOrganizations(await organizationsRequest<Organization[]>());
+        setOrganizations(page.data);
+        setNextCursor(page.pagination.next_cursor);
       })
       .catch((failure) => {
         if (controller.signal.aborted) return;
@@ -70,7 +78,9 @@ export default function AccountPage() {
     try {
       await organizationsRequest("", { method: "POST", body: { name } });
       setName("");
-      setOrganizations(await organizationsRequest<Organization[]>());
+      const page = await organizationsRequest<Page<Organization>>();
+      setOrganizations(page.data);
+      setNextCursor(page.pagination.next_cursor);
     } catch (failure) {
       setError(
         failure instanceof ApiError && failure.status === 409
@@ -105,6 +115,27 @@ export default function AccountPage() {
       );
     } finally {
       setAcceptBusy(false);
+    }
+  }
+
+  async function loadMore() {
+    if (!nextCursor || pageBusy) return;
+    setPageBusy(true);
+    try {
+      const page = await organizationsRequest<Page<Organization>>(
+        `?cursor=${encodeURIComponent(nextCursor)}`,
+      );
+      setOrganizations((current) => [
+        ...current,
+        ...page.data.filter(
+          (item) => !current.some((old) => old.id === item.id),
+        ),
+      ]);
+      setNextCursor(page.pagination.next_cursor);
+    } catch {
+      setError("We couldn't load more workspaces. Please try again.");
+    } finally {
+      setPageBusy(false);
     }
   }
 
@@ -194,6 +225,12 @@ export default function AccountPage() {
                   />
                 ))}
               </div>
+            )}
+
+            {nextCursor && (
+              <button className="button" onClick={loadMore} disabled={pageBusy}>
+                {pageBusy ? "Loading..." : "Load more workspaces"}
+              </button>
             )}
 
             {organizations.length === 0 && (
@@ -389,10 +426,16 @@ function WorkspaceCard({ organization }: { organization: Organization }) {
                   className="button"
                   type="button"
                   onClick={async () => {
-                    await navigator.clipboard.writeText(token);
-                    setNotice(
-                      "Invitation token copied. Share it privately with the invitee.",
-                    );
+                    try {
+                      await navigator.clipboard.writeText(token);
+                      setNotice(
+                        "Invitation token copied. Share it privately with the invitee.",
+                      );
+                    } catch {
+                      setNotice(
+                        "Copy is unavailable. Select and copy the token manually.",
+                      );
+                    }
                   }}
                 >
                   <Clipboard size={13} /> Copy token

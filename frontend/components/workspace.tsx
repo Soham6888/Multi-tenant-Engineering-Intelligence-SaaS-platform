@@ -61,7 +61,7 @@ const adminNav: [string, LucideIcon][] = [
   ["Settings", Settings],
 ];
 const descriptions: Record<string, string> = {
-  Overview: "Your engineering activity, connected. See the bigger picture.",
+  Overview: "See what shipped. Find what needs your attention.",
   Repositories: "A closer look at the systems your team is building.",
   "Pull Requests": "Understand review flow and find delivery bottlenecks.",
   Deployments: "Follow every release, from commit to production.",
@@ -149,6 +149,14 @@ export function Workspace() {
     (e) =>
       (repository === "all" || e.repo === repository) &&
       `${e.title} ${e.repo}`.toLowerCase().includes(search.toLowerCase()),
+  );
+  const reviewQueue = pullRequests.filter(
+    (pr) =>
+      pr.state === "Awaiting review" &&
+      (repository === "all" || pr.repo === repository) &&
+      `${pr.title} ${pr.repo} ${pr.author}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
 
   useEffect(() => {
@@ -474,7 +482,7 @@ export function Workspace() {
           <div className="page-heading">
             <div>
               <div className="eyebrow heading-eyebrow">
-                YOUR WORKSPACE, AT A GLANCE
+                ENGINEERING / DELIVERY INTELLIGENCE
               </div>
               <h1>{page === "Overview" ? "Engineering overview" : page}</h1>
               <p>
@@ -507,6 +515,81 @@ export function Workspace() {
               Connect GitHub <ArrowRight size={14} />
             </button>
           </div>
+
+          {page === "Overview" && (
+            <section className="delivery-focus" aria-labelledby="focus-title">
+              <div className="focus-intro">
+                <span className="focus-kicker">
+                  <span className="status-dot" /> SAMPLE REVIEW QUEUE
+                </span>
+                <h2 id="focus-title">
+                  Keep good work <br />
+                  moving forward.
+                </h2>
+                <p>
+                  A closer look at the changes waiting for their next review.
+                  Explore the sample queue below.
+                </p>
+                <button
+                  className="focus-action"
+                  onClick={() => {
+                    setState("Awaiting review");
+                    navigate("Pull Requests");
+                  }}
+                >
+                  Open review queue <ArrowUpRight size={17} />
+                </button>
+                <div className="focus-footnote">
+                  <GitBranch size={14} /> Repository activity, with context.
+                </div>
+              </div>
+              <div className="focus-queue">
+                <div className="focus-queue-heading">
+                  <span>
+                    <Clock3 size={16} /> Waiting for review
+                  </span>
+                  <span className="focus-count">{reviewQueue.length}</span>
+                </div>
+                <p className="queue-caption">
+                  Sample snapshot · independent of the chart date range
+                </p>
+                {reviewQueue.map((pr) => (
+                  <button
+                    className="focus-row"
+                    key={pr.number}
+                    onClick={() => {
+                      setRepository(pr.repo);
+                      setState("Awaiting review");
+                      navigate("Pull Requests");
+                    }}
+                  >
+                    <span className="focus-pr-icon">
+                      <GitPullRequest size={19} />
+                    </span>
+                    <span className="focus-row-copy">
+                      <strong>{pr.title}</strong>
+                      <small>
+                        {pr.repo} <span>#{pr.number}</span>
+                      </small>
+                    </span>
+                    <span className="queue-age">
+                      {pr.age}
+                      <ArrowUpRight size={14} />
+                    </span>
+                  </button>
+                ))}
+                {!reviewQueue.length && (
+                  <p className="queue-empty">
+                    No sample reviews match this view.
+                  </p>
+                )}
+                <div className="queue-footer">
+                  <ShieldCheck size={14} /> Sample data. GitHub is not
+                  connected.
+                </div>
+              </div>
+            </section>
+          )}
 
           {[
             "Overview",
@@ -630,21 +713,6 @@ export function Workspace() {
 
               {page === "Overview" && (
                 <>
-                  <section className="insight-strip">
-                    <span className="insight-symbol">
-                      <Sparkles size={19} />
-                    </span>
-                    <div>
-                      <strong>A little context goes a long way.</strong>
-                      <p>
-                        Explore delivery trends and review bottlenecks with
-                        evidence from your engineering activity.
-                      </p>
-                    </div>
-                    <button onClick={() => navigate("AI Assistant")}>
-                      Explore AI insights <ArrowRight size={15} />
-                    </button>
-                  </section>
                   <div className="charts-grid">
                     <section className="panel">
                       <div className="panel-heading">

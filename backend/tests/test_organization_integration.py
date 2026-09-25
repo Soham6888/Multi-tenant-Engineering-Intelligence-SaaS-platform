@@ -34,14 +34,14 @@ async def test_organizations_are_tenant_scoped(client: httpx.AsyncClient) -> Non
     org_a = await client.post("/api/v1/organizations", json={"name": "Payments"})
     assert org_a.status_code == 201, org_a.text
     assert org_a.json()["slug"] == "payments"
-    assert (await client.get("/api/v1/organizations")).json()[0]["role"] == "OWNER"
+    assert (await client.get("/api/v1/organizations")).json()["data"][0]["role"] == "OWNER"
 
     await logout(client, csrf_a)
     _, csrf_b = await create_user(client, "owner-b@example.com")
     org_b = await client.post("/api/v1/organizations", json={"name": "Payments"})
     assert org_b.status_code == 201
     assert org_b.json()["slug"] == "payments-2"
-    assert (await client.get("/api/v1/organizations")).json()[0]["id"] == org_b.json()["id"]
+    assert (await client.get("/api/v1/organizations")).json()["data"][0]["id"] == org_b.json()["id"]
 
     await logout(client, csrf_b)
     signed_in = await client.post(
@@ -54,7 +54,7 @@ async def test_organizations_are_tenant_scoped(client: httpx.AsyncClient) -> Non
     hidden_members = await client.get(f"/api/v1/organizations/{org_b.json()['id']}/members")
     assert outside.status_code == hidden_members.status_code == 404
     assert outside.json()["error"]["code"] == "ORGANIZATION_NOT_FOUND"
-    assert [org["id"] for org in (await client.get("/api/v1/organizations")).json()] == [
+    assert [org["id"] for org in (await client.get("/api/v1/organizations")).json()["data"]] == [
         org_a.json()["id"]
     ]
 
@@ -66,7 +66,7 @@ async def test_owner_invariant_and_single_use_invitation(
     org = await client.post("/api/v1/organizations", json={"name": "Platform"})
     organization_id = UUID(org.json()["id"])
     members = await client.get(f"/api/v1/organizations/{organization_id}/members")
-    owner_id = UUID(members.json()[0]["user_id"])
+    owner_id = UUID(members.json()["data"][0]["user_id"])
 
     demote = await client.patch(
         f"/api/v1/organizations/{organization_id}/members/{owner_id}",
@@ -104,7 +104,7 @@ async def test_owner_invariant_and_single_use_invitation(
     assert accepted.status_code == 200, accepted.text
     assert accepted.json()["role"] == "MANAGER"
     members = await client.get(f"/api/v1/organizations/{organization_id}/members")
-    assert {member["role"] for member in members.json()} == {"OWNER", "MANAGER"}
+    assert {member["role"] for member in members.json()["data"]} == {"OWNER", "MANAGER"}
     second_use = await client.post(
         "/api/v1/organizations/invitations/accept", json={"token": token}
     )

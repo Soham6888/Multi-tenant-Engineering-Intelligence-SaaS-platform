@@ -29,3 +29,9 @@ AI tools must enforce authorization independently of model instructions. Never p
 Organization APIs have an initial tenant boundary; GitHub webhook security, verified email, complete CSP, production TLS proxy, managed secret vault, audit listing and public deployment do not exist yet. Use local development only until a separate production hardening review is complete.
 
 Security references: [OWASP session management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html), [CSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+## Tenancy repair
+
+All membership mutations acquire the organization row lock before loading current actor and target roles. Requests waiting behind a demotion/removal recheck current permissions. Invitations use the same lock order, refresh after waiting, and verify that their issuer still has authority when accepted. Concurrent acceptance cannot create duplicate memberships. Role changes, tenant writes, expiry/wrong-email/replaced-token rejection, concurrent owner demotions, and fail-closed API limits have regression tests against PostgreSQL.
+
+All API responses are no-store. Body-size checks also cover organization writes. Organization API budgets use authenticated user identifiers rather than trusting forwarded IP headers.

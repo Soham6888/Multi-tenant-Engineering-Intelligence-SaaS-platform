@@ -8,8 +8,11 @@ from app.models.auth import (
     Session,
     User,
 )
+from app.models.integrations import Integration, Repository
 
 __all__ = [
+    "Integration",
+    "Repository",
     "AuditLog",
     "Base",
     "MemberRole",

@@ -1,13 +1,13 @@
 /* Fonts are bundled locally; no external font requests are required. */
 
 :root {
-  --canvas: #f7f8f5;
+  --canvas: #f4f6fa;
   --paper: #fff;
-  --ink: #202b28;
-  --muted: #7e8781;
-  --line: #e7ebe5;
-  --green: #168463;
-  --sidebar: #172620;
+  --ink: #202b40;
+  --muted: #627089;
+  --line: #e2e7ef;
+  --green: #087e73;
+  --sidebar: #121b2c;
   --font-sans: "DM Sans Variable", Arial, sans-serif;
   --font-heading: "Manrope Variable", Arial, sans-serif;
 }
@@ -112,8 +112,8 @@ h3 {
   letter-spacing: -0.5px;
 }
 .brand-symbol {
-  background: #c8edb1;
-  color: #20392a;
+  background: #99efd5;
+  color: #122b35;
   border-radius: 11px;
   width: 39px;
   height: 41px;
@@ -191,12 +191,12 @@ h3 {
   stroke-width: 1.7;
 }
 .nav-item:hover {
-  background: #24352b;
+  background: #223049;
   color: #edf3e9;
 }
 .nav-item.active {
-  background: #d2ecb7;
-  color: #263c25;
+  background: #c1f5e4;
+  color: #163c3b;
   font-weight: 650;
   box-shadow: 0 1px 3px #0002;
 }
@@ -231,8 +231,8 @@ h3 {
   padding-top: 35px;
 }
 .local-card {
-  background: linear-gradient(120deg, #293a2c, #213126);
-  border: 1px solid #3a4c39;
+  background: linear-gradient(120deg, #253349, #1b273d);
+  border: 1px solid #39485f;
   border-radius: 8px;
   padding: 15px 13px;
   margin: 0 3px 20px;
@@ -564,8 +564,8 @@ h1 {
 .metric-card {
   background: white;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 18px 18px 15px;
+  border-radius: 14px;
+  padding: 20px 18px 18px;
   box-shadow: 0 2px 3px #16301602;
   overflow: hidden;
 }

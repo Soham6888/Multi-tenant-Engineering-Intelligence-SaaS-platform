@@ -24,6 +24,11 @@ test("login submits credentials and shows account identity", async ({
   await page.route("**/api/v1/auth/me", (route) =>
     route.fulfill({ json: identity }),
   );
+  await page.route("**/api/v1/organizations", (route) =>
+    route.fulfill({
+      json: { data: [], pagination: { has_more: false, next_cursor: null } },
+    }),
+  );
   await page.goto("/login");
   await page.getByLabel("Email address").fill("alex@example.com");
   await page
@@ -109,6 +114,11 @@ test("unauthenticated account redirects and logout uses session CSRF", async ({
         : { status: 401, json: { error: { message: "Please sign in" } } },
     ),
   );
+  await page.route("**/api/v1/organizations", (route) =>
+    route.fulfill({
+      json: { data: [], pagination: { has_more: false, next_cursor: null } },
+    }),
+  );
   await page.goto("/account");
   await expect(page).toHaveURL(/\/login$/);
   signedIn = true;
@@ -142,7 +152,12 @@ test("account creates an isolated organization workspace", async ({ page }) => {
         },
       ];
     }
-    await route.fulfill({ json: organizations });
+    await route.fulfill({
+      json: {
+        data: organizations,
+        pagination: { has_more: false, next_cursor: null },
+      },
+    });
   });
   await page.goto("/account");
   await expect(
@@ -191,7 +206,9 @@ test("matching account can accept a private workspace invitation", async ({
     route.fulfill({ json: identity }),
   );
   await page.route("**/api/v1/organizations", (route) =>
-    route.fulfill({ json: [] }),
+    route.fulfill({
+      json: { data: [], pagination: { has_more: false, next_cursor: null } },
+    }),
   );
   await page.route(
     "**/api/v1/organizations/invitations/accept",
@@ -235,8 +252,38 @@ test("real registration and logout through the API proxy", async ({ page }) => {
     .getByRole("button", { name: "Create account", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Welcome, Browser Test." }),
+    page.getByRole("heading", { name: "Good to have you here, Browser Test." }),
   ).toBeVisible();
+  await page
+    .getByLabel("Create a workspace")
+    .fill(`Browser Workspace ${crypto.randomUUID()}`);
+  await page
+    .getByRole("button", { name: "Create workspace", exact: true })
+    .click();
+  await expect(page.getByText("OWNER", { exact: true })).toBeVisible();
+  await expect(page.locator(".workspace-card h3")).toContainText(
+    "Browser Workspace",
+  );
+  await page
+    .getByLabel("Create a workspace")
+    .fill(`Second Browser Workspace ${crypto.randomUUID()}`);
+  await page
+    .getByRole("button", { name: "Create workspace", exact: true })
+    .click();
+  await expect(page.locator(".workspace-card")).toHaveCount(2);
+  const collection = await page.request.get("/api/v1/organizations?limit=1");
+  expect(collection.status()).toBe(200);
+  const firstPage = await collection.json();
+  expect(firstPage.data).toHaveLength(1);
+  expect(firstPage.pagination.has_more).toBe(true);
+  const nextPage = await page.request.get(
+    `/api/v1/organizations?limit=1&cursor=${encodeURIComponent(firstPage.pagination.next_cursor)}`,
+  );
+  expect(nextPage.status()).toBe(200);
+  const nextData = await nextPage.json();
+  expect(nextData.data).toHaveLength(1);
+  expect(nextData.data[0].id).not.toBe(firstPage.data[0].id);
+  expect(nextData.pagination.has_more).toBe(false);
   const cookies = await page.context().cookies();
   expect(cookies.find((c) => c.name === "eip_session")?.httpOnly).toBe(true);
   await page.reload();

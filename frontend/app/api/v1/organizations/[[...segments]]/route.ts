@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-type Context = { params: Promise<{ segments: string[] }> };
+type Context = { params: Promise<{ segments?: string[] }> };
 
 function failure(status: number, code: string, message: string) {
   const id = `req_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -30,7 +30,7 @@ function allowed(segments: string[], method: string) {
 }
 
 async function proxy(request: NextRequest, context: Context) {
-  const { segments } = await context.params;
+  const { segments = [] } = await context.params;
   const method = request.method;
   if (!allowed(segments, method))
     return failure(404, "RESOURCE_NOT_FOUND", "Route not found");
@@ -78,8 +78,13 @@ async function proxy(request: NextRequest, context: Context) {
   }
   try {
     const path = segments.map(encodeURIComponent).join("/");
+    const query = new URLSearchParams();
+    for (const key of ["limit", "cursor"]) {
+      const value = request.nextUrl.searchParams.get(key);
+      if (value !== null) query.set(key, value);
+    }
     const upstream = await fetch(
-      `${process.env.EIP_API_URL || "http://127.0.0.1:8000"}/api/v1/organizations${path ? `/${path}` : ""}`,
+      `${process.env.EIP_API_URL || "http://127.0.0.1:8000"}/api/v1/organizations${path ? `/${path}` : ""}${query.size ? `?${query}` : ""}`,
       {
         method,
         headers,

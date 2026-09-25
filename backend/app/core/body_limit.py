@@ -5,7 +5,7 @@ from app.core.errors import error_response
 
 
 class AuthBodyLimit:
-    """Bound auth JSON bodies before FastAPI parses them, including chunked requests."""
+    """Bound current account and organization JSON bodies, including chunked requests."""
 
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
@@ -13,8 +13,12 @@ class AuthBodyLimit:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if (
             scope["type"] != "http"
-            or not scope["path"].startswith("/api/v1/auth/")
-            or scope["method"] != "POST"
+            or not (
+                scope["path"].startswith("/api/v1/auth/")
+                or scope["path"] == "/api/v1/organizations"
+                or scope["path"].startswith("/api/v1/organizations/")
+            )
+            or scope["method"] not in ("POST", "PATCH")
         ):
             await self.app(scope, receive, send)
             return
